@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Minutes Generator</title>
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+    <h1>Meeting Minutes Generator</h1>
+    
+    <form id="upload-form" enctype="multipart/form-data">
+        <label for="file">Upload Audio File:</label>
+        <input type="file" id="file" name="file" accept=".wav">
+        <button type="button" onclick="uploadFile()">Process Audio</button>
+    </form>
+
+    <p id="status-message"></p>
+
+    <div class="section" id="transcription-section">
+        <h2>Transcription</h2>
+        <p id="transcription"></p>
+    </div>
+
+    <div class="section" id="summary-section">
+        <h2>Summary</h2>
+        <p id="summary"></p>
+    </div>
+
+    <div class="section" id="sentiment-section">
+        <h2>Sentiment Analysis</h2>
+        <p id="sentiment"></p>
+    </div>
+
+    <div class="section" id="key-points-section">
+        <h2>Key Points</h2>
+        <ul id="keyPoints"></ul>
+    </div>
+
+    <div class="section" id="action-items-section">
+        <h2>Action Items</h2>
+        <ul id="actionItems"></ul>
+    </div>
+
+    <script>
+        function uploadFile() {
+            var formData = new FormData();
+            var fileInput = document.getElementById('file').files[0];
+
+            if (!fileInput) {
+                document.getElementById('status-message').innerText = "Please select a file!";
+                return;
+            }
+
+            formData.append("file", fileInput);
+            document.getElementById('status-message').innerText = "Processing...";
+
+            fetch("/upload", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('status-message').innerText = data.error;
+                } else {
+                    document.getElementById('status-message').innerText = data.message;
+
+                    // Update sections with received data
+                    document.getElementById('transcription').innerText = data.transcription;
+                    document.getElementById('summary').innerText = data.summary || "Summary not available.";
+                    document.getElementById('sentiment').innerText = "Sentiment: " + (data.sentiment || "Not available.");
+                    document.getElementById('keyPoints').innerHTML = data.key_points ? data.key_points.map(point => `<li>${point}</li>`).join("") : "<li>No key points extracted.</li>";
+                    document.getElementById('actionItems').innerHTML = data.action_items ? data.action_items.map(item => `<li>${item}</li>`).join("") : "<li>No action items extracted.</li>";
+                }
+            })
+            .catch(error => {
+                document.getElementById('status-message').innerText = "Error processing file.";
+            });
+        }
+    </script>
+</body>
+</html>
